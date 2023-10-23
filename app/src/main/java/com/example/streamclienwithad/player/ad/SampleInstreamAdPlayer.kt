@@ -11,6 +11,9 @@ package com.example.streamclienwithad.player.ad
 
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
+import com.example.streamclienwithad.haks.RollHolder
+import com.example.streamclienwithad.haks.VideoAdPlayerCallbacks
+import com.example.streamclienwithad.haks.YandexInStreamAdPlayerCallbacks
 import com.example.streamclienwithad.player.SamplePlayer
 import com.yandex.mobile.ads.instream.player.ad.InstreamAdPlayer
 import com.yandex.mobile.ads.instream.player.ad.InstreamAdPlayerListener
@@ -19,12 +22,16 @@ import com.yandex.mobile.ads.video.playback.model.VideoAd
 @UnstableApi
 class SampleInstreamAdPlayer(
     private val exoPlayerView: PlayerView,
-) : InstreamAdPlayer, SamplePlayer {
+    private val yandexInStreamAdPlayerCallbacks: YandexInStreamAdPlayerCallbacks,
+) : InstreamAdPlayer, SamplePlayer, VideoAdPlayerCallbacks {
 
     private val adPlayers = mutableMapOf<VideoAd, SampleVideoAdPlayer>()
 
     private var currentVideoAd: VideoAd? = null
     private var adPlayerListener: InstreamAdPlayerListener? = null
+
+    /** Держатель для предоставление роллов */
+    private val rollHolder: RollHolder = RollHolder.getInstance()
 
     override fun setInstreamAdPlayerListener(instreamAdPlayerListener: InstreamAdPlayerListener?) {
         adPlayerListener = instreamAdPlayerListener
@@ -40,6 +47,19 @@ class SampleInstreamAdPlayer(
     }
 
     override fun playAd(videoAd: VideoAd) {
+        return
+    }
+
+    /** старт воспроизведение преролла */
+    fun playPreRoll() {
+        val videoAd = rollHolder.getPreRollOrNull() ?: return
+        currentVideoAd = videoAd
+        adPlayers[videoAd]?.playAd()
+    }
+
+    /** старт воспроизведение мидрола */
+    fun playMidRoll() {
+        val videoAd = rollHolder.getMidRollOrNull() ?: return
         currentVideoAd = videoAd
         adPlayers[videoAd]?.playAd()
     }
@@ -81,7 +101,7 @@ class SampleInstreamAdPlayer(
     }
 
     override fun releaseAd(videoAd: VideoAd) {
-        if(videoAd == currentVideoAd) {
+        if (videoAd == currentVideoAd) {
             currentVideoAd = null
         }
 
@@ -108,6 +128,18 @@ class SampleInstreamAdPlayer(
 
     override fun pause() {
         adPlayers[currentVideoAd]?.pauseAd()
+    }
+
+    private var isFirstPrerollCalled = false
+
+    override fun onAdLoaded(videoAd: VideoAd) {
+        rollHolder.addRollToLoadedList(videoAd)
+        if (rollHolder.isPreRoll(videoAd) && !isFirstPrerollCalled) {
+            isFirstPrerollCalled = true
+            yandexInStreamAdPlayerCallbacks.onPrerollLoaded()
+        } else {
+            // TODO
+        }
     }
 
     private companion object {

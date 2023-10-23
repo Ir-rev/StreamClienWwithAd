@@ -8,6 +8,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
+import com.example.streamclienwithad.haks.RollHolder
+import com.example.streamclienwithad.haks.YandexInStreamAdPlayerCallbacks
 import com.example.streamclienwithad.player.ad.SampleInstreamAdPlayer
 import com.example.streamclienwithad.player.content.ContentVideoPlayer
 import com.example.streamclienwithad.player.SamplePlayer
@@ -21,7 +23,7 @@ import com.yandex.mobile.ads.instream.player.ad.InstreamAdView
 
 
 @UnstableApi
-class MainFragment : Fragment() {
+class MainFragment : Fragment(), YandexInStreamAdPlayerCallbacks {
 
     private val eventLogger = InstreamAdEventLogger()
 
@@ -30,6 +32,9 @@ class MainFragment : Fragment() {
     private var activePlayer: SamplePlayer? = null
     private var instreamAdPlayer: SampleInstreamAdPlayer? = null
     private var contentVideoPlayer: ContentVideoPlayer? = null
+
+    /** Держатель для предоставление роллов */
+    private val rollHolder: RollHolder = RollHolder.getInstance()
 
     private lateinit var instreamAdView: InstreamAdView
     private lateinit var exoPlayerView: PlayerView
@@ -52,7 +57,7 @@ class MainFragment : Fragment() {
     private fun initPlayer() {
         val contentStreamUrl = DASH_URl
         contentVideoPlayer = ContentVideoPlayer(contentStreamUrl, exoPlayerView)
-        instreamAdPlayer = SampleInstreamAdPlayer(exoPlayerView)
+        instreamAdPlayer = SampleInstreamAdPlayer(exoPlayerView, this)
         loadInstreamAd()
     }
 
@@ -66,6 +71,8 @@ class MainFragment : Fragment() {
     }
 
     private fun showInstreamAd(instreamAd: InstreamAd) {
+        rollHolder.clearPreRollNamesToList()
+        rollHolder.addPreRollNamesToList(instreamAd)
         instreamAdBinder = InstreamAdBinder(
             requireContext(),
             instreamAd,
@@ -109,5 +116,9 @@ class MainFragment : Fragment() {
 //        private const val DASH_URl =
 //            "https://f83c5e82d54143de83503cbddaf2ef50.mediatailor.eu-west-1.amazonaws.com/v1/dash/cf6421621b389b384c1fd22e51603ee95db76ae0/usp-demo/k8s/live/stable/scte35.isml/.mpd?filter=%28type!=%22textstream%22%29"
 
+    }
+
+    override fun onPrerollLoaded() {
+        instreamAdPlayer?.playPreRoll()
     }
 }
