@@ -84,6 +84,7 @@ class RollHolder private constructor() {
     fun dispose() {
         loadedPreRollList.clear()
         loadedMidRollList.clear()
+        preRollsAdNamesList.clear()
     }
 
     companion object {

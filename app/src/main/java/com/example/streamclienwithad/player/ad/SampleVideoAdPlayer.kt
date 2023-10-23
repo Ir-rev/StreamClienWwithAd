@@ -14,6 +14,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.SimpleExoPlayer
 import androidx.media3.ui.PlayerView
+import com.example.streamclienwithad.haks.VideoAdPlayerCallbacks
 import com.example.streamclienwithad.player.creator.MediaSourceCreator
 import com.yandex.mobile.ads.instream.player.ad.InstreamAdPlayerListener
 import com.yandex.mobile.ads.video.playback.model.VideoAd
@@ -22,6 +23,7 @@ import com.yandex.mobile.ads.video.playback.model.VideoAd
 class SampleVideoAdPlayer(
     private val videoAd: VideoAd,
     private val exoPlayerView: PlayerView,
+    private val videoAdPlayerCallbacks: VideoAdPlayerCallbacks,
 ) {
 
     private val context = exoPlayerView.context
@@ -74,6 +76,7 @@ class SampleVideoAdPlayer(
     fun skipAd() {
         pauseAd()
         adPlayerListener?.onAdSkipped(videoAd)
+        videoAdPlayerCallbacks.onAdEndedOrSkip(videoAd)
     }
 
     fun setVolume(volume: Float) {
@@ -139,9 +142,11 @@ class SampleVideoAdPlayer(
 
         private fun onAdPrepared() {
             adPlayerListener?.onAdPrepared(videoAd)
+            videoAdPlayerCallbacks.onAdLoaded(videoAd)
         }
 
         private fun onEndedState() {
+            videoAdPlayerCallbacks.onAdEndedOrSkip(videoAd)
             resetState()
             adPlayerListener?.onAdCompleted(videoAd)
         }

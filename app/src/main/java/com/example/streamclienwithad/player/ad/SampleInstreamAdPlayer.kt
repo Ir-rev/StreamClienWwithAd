@@ -18,6 +18,12 @@ import com.example.streamclienwithad.player.SamplePlayer
 import com.yandex.mobile.ads.instream.player.ad.InstreamAdPlayer
 import com.yandex.mobile.ads.instream.player.ad.InstreamAdPlayerListener
 import com.yandex.mobile.ads.video.playback.model.VideoAd
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @UnstableApi
 class SampleInstreamAdPlayer(
@@ -29,6 +35,7 @@ class SampleInstreamAdPlayer(
 
     private var currentVideoAd: VideoAd? = null
     private var adPlayerListener: InstreamAdPlayerListener? = null
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     /** Держатель для предоставление роллов */
     private val rollHolder: RollHolder = RollHolder.getInstance()
@@ -39,7 +46,7 @@ class SampleInstreamAdPlayer(
     }
 
     override fun prepareAd(videoAd: VideoAd) {
-        val videoAdPlayer = SampleVideoAdPlayer(videoAd, exoPlayerView)
+        val videoAdPlayer = SampleVideoAdPlayer(videoAd, exoPlayerView, this)
         adPlayers[videoAd] = videoAdPlayer
 
         videoAdPlayer.setInstreamAdPlayerListener(adPlayerListener)
@@ -53,8 +60,15 @@ class SampleInstreamAdPlayer(
     /** старт воспроизведение преролла */
     fun playPreRoll() {
         val videoAd = rollHolder.getPreRollOrNull() ?: return
-        currentVideoAd = videoAd
-        adPlayers[videoAd]?.playAd()
+        scope.launch {
+            delay(2000)
+            withContext(Dispatchers.Main) {
+                currentVideoAd = videoAd
+                adPlayers[videoAd]?.playAd()
+                adPlayerListener?.onAdStarted(videoAd)
+                adPlayerListener?.onAdResumed(videoAd)
+            }
+        }
     }
 
     /** старт воспроизведение мидрола */
@@ -101,16 +115,16 @@ class SampleInstreamAdPlayer(
     }
 
     override fun releaseAd(videoAd: VideoAd) {
-        if (videoAd == currentVideoAd) {
-            currentVideoAd = null
-        }
-
-        adPlayers[videoAd]?.let { videoAdPlayer ->
-            videoAdPlayer.setInstreamAdPlayerListener(null)
-            videoAdPlayer.releaseAd()
-        }
-
-        adPlayers.remove(videoAd)
+//        if (videoAd == currentVideoAd) {
+//            currentVideoAd = null
+//        }
+//
+//        adPlayers[videoAd]?.let { videoAdPlayer ->
+//            videoAdPlayer.setInstreamAdPlayerListener(null)
+//            videoAdPlayer.releaseAd()
+//        }
+//
+//        adPlayers.remove(videoAd)
     }
 
     fun release() {
@@ -131,6 +145,7 @@ class SampleInstreamAdPlayer(
     }
 
     private var isFirstPrerollCalled = false
+    private var lastAd: VideoAd? = null
 
     override fun onAdLoaded(videoAd: VideoAd) {
         rollHolder.addRollToLoadedList(videoAd)
@@ -139,6 +154,22 @@ class SampleInstreamAdPlayer(
             yandexInStreamAdPlayerCallbacks.onPrerollLoaded()
         } else {
             // TODO
+        }
+    }
+
+    override fun onAdEndedOrSkip(videoAd: VideoAd) {
+        if (lastAd == videoAd) return
+        lastAd = videoAd
+        val preRoll = rollHolder.isPrerollPrepared()
+        if (preRoll) {
+            playPreRoll()
+        } else {
+            scope.launch {
+                delay(10000)
+                withContext(Dispatchers.Main) {
+                    playMidRoll()
+                }
+            }
         }
     }
 

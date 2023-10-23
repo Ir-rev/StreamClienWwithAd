@@ -34,7 +34,7 @@ android {
 
 dependencies {
 
-    implementation("com.yandex.android:mobileads:6.1.0")
+    implementation("com.yandex.android:mobileads:5.8.0")
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.10.0")
