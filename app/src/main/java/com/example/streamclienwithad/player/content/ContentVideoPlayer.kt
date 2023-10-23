@@ -34,26 +34,21 @@ class ContentVideoPlayer(
 ) : VideoPlayer, SamplePlayer {
 
     private val context = exoPlayerView.context
-    private val exoPlayer = SimpleExoPlayer.Builder(context).build()
+    private var exoPlayer: SimpleExoPlayer? = null
 
     private var videoPlayerListener: VideoPlayerListener? = null
 
-    init {
-        exoPlayer.addListener(ContentPlayerEventsListener())
-    }
-
-    override fun isPlaying() = exoPlayer.isPlaying
+    override fun isPlaying() = exoPlayer!!.isPlaying
 
     override fun resume() {
-        exoPlayer.playWhenReady = true
+        exoPlayer!!.playWhenReady = true
     }
 
     override fun pause() {
-        exoPlayer.playWhenReady = false
+        exoPlayer!!.playWhenReady = false
     }
 
     override fun prepareVideo() {
-        val context = exoPlayerView.context
         val dataSourceFactory: DataSource.Factory =
             DefaultDataSourceFactory(context, Util.getUserAgent(context, "ExoPlayer"))
         val uri = Uri.parse(dashUrl)
@@ -66,17 +61,26 @@ class ContentVideoPlayer(
 
         val newPlayer =
             SimpleExoPlayer.Builder(context).setTrackSelector(trackSelector).build()
-
-        exoPlayerView.player = newPlayer
-        newPlayer.prepare(dashMediaSource)
-        newPlayer.playWhenReady = true
+        exoPlayer = newPlayer
+        newPlayer.apply {
+            playWhenReady = true
+            addListener(ContentPlayerPrepareListener())
+            prepare(dashMediaSource)
+        }
+        exoPlayer!!.addListener(ContentPlayerEventsListener())
     }
 
-    override fun getVideoPosition() = exoPlayer.currentPosition
+    private var value = 0L
 
-    override fun getVideoDuration() = exoPlayer.duration
+    override fun getVideoPosition(): Long {
+        val currentValue = value
+        value += 100
+        return currentValue
+    }
 
-    override fun getVolume() = exoPlayer.volume
+    override fun getVideoDuration() = exoPlayer!!.duration
+
+    override fun getVolume() = exoPlayer!!.volume
 
     override fun pauseVideo() {
         exoPlayerView.useController = false
@@ -94,7 +98,7 @@ class ContentVideoPlayer(
     }
 
     fun release() {
-        exoPlayer.release()
+        exoPlayer!!.release()
     }
 
     private inner class ContentPlayerEventsListener : Player.Listener {
@@ -128,7 +132,7 @@ class ContentVideoPlayer(
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_READY) {
                 videoPlayerListener?.onVideoPrepared()
-                exoPlayer.removeListener(this)
+                exoPlayer!!.removeListener(this)
             }
         }
     }
