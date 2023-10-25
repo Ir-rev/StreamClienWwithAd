@@ -11,6 +11,7 @@ import androidx.media3.ui.PlayerView
 import com.example.streamclienwithad.player.ad.SampleInstreamAdPlayer
 import com.example.streamclienwithad.player.content.ContentVideoPlayer
 import com.example.streamclienwithad.player.SamplePlayer
+import com.example.streamclienwithad.player.dirty_hacks.RollTimeHolder
 import com.yandex.mobile.ads.instream.InstreamAd
 import com.yandex.mobile.ads.instream.InstreamAdBinder
 import com.yandex.mobile.ads.instream.InstreamAdListener
@@ -33,6 +34,7 @@ class MainFragment : Fragment() {
 
     private lateinit var instreamAdView: InstreamAdView
     private lateinit var exoPlayerView: PlayerView
+    private val rollTimeHolder = RollTimeHolder.getInstance()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -82,6 +84,9 @@ class MainFragment : Fragment() {
 
         override fun onInstreamAdLoaded(ad: InstreamAd) {
             showInstreamAd(ad)
+            ad.adBreaks.filter{ it.type == "midroll" || it.type == "preroll"}.forEach {
+                rollTimeHolder.addTimeToRollTimeList(it.adBreakPosition.value)
+            }
         }
 
         override fun onInstreamAdFailedToLoad(error: String) {

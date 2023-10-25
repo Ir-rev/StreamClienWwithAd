@@ -24,6 +24,7 @@ import androidx.media3.exoplayer.trackselection.TrackSelector
 import androidx.media3.ui.PlayerView
 import com.example.streamclienwithad.player.SamplePlayer
 import com.example.streamclienwithad.player.creator.MediaSourceCreator
+import com.example.streamclienwithad.player.dirty_hacks.RollTimeHolder
 import com.yandex.mobile.ads.instream.player.content.VideoPlayer
 import com.yandex.mobile.ads.instream.player.content.VideoPlayerListener
 
@@ -70,12 +71,10 @@ class ContentVideoPlayer(
         exoPlayer!!.addListener(ContentPlayerEventsListener())
     }
 
-    private var value = 0L
+    private val rollTimeHolder = RollTimeHolder.getInstance()
 
     override fun getVideoPosition(): Long {
-        val currentValue = value
-        value += 100
-        return currentValue
+        return rollTimeHolder.getFirstTime() ?: 0
     }
 
     override fun getVideoDuration() = exoPlayer!!.duration

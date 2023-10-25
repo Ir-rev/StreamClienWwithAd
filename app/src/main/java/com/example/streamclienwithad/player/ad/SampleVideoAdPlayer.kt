@@ -82,7 +82,6 @@ class SampleVideoAdPlayer(
 
     fun getVolume() = adPlayer.volume
 
-
     fun releaseAd() {
         adPlayer.release()
     }
@@ -132,6 +131,7 @@ class SampleVideoAdPlayer(
                         onAdBufferingFinished()
                     }
                 }
+
                 Player.STATE_BUFFERING -> onAdBufferingStarted()
                 Player.STATE_ENDED -> onEndedState()
             }

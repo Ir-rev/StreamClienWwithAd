@@ -81,7 +81,7 @@ class SampleInstreamAdPlayer(
     }
 
     override fun releaseAd(videoAd: VideoAd) {
-        if(videoAd == currentVideoAd) {
+        if (videoAd == currentVideoAd) {
             currentVideoAd = null
         }
 
